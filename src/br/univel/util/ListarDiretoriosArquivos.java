@@ -1,12 +1,11 @@
-package br.univel.jshare.util;
+package br.univel.util;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-
-import br.univel.jshare.comum.Arquivo;
+import br.univel.comum.Arquivo;
 
 public class ListarDiretoriosArquivos {
 	

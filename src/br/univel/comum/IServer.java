@@ -1,4 +1,4 @@
-package br.univel.jshare.comum;
+package br.univel.comum;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

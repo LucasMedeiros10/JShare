@@ -1,4 +1,4 @@
-package br.univel.jshare.util;
+package br.univel.util;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;

@@ -1,4 +1,4 @@
-package br.univel.jshare.util;
+package br.univel.util;
 
 import java.io.File;
 import java.io.IOException;
