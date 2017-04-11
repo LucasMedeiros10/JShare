@@ -1,11 +1,11 @@
-package br.univel.util;
+package br.univel.jshare.util;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import br.univel.comum.Arquivo;
+import br.univel.jshare.comum.Arquivo;
 
 public class ListarDiretoriosArquivos {
 	
@@ -21,8 +21,8 @@ public class ListarDiretoriosArquivos {
 				arq.setPath(file.getParent());
 				arq.setDataHoraModificacao(new Date(file.lastModified() * 1000));
 				arq.setMd5(Md5Util.getMD5Checksum(file.getPath()));
-				arq.setExtensao(file.getName().substring((file.getName().lastIndexOf("."))));
-				arq.setNome(arq.getNome().replace(arq.getExtensao(), ""));
+				arq.setExtensao(file.getName().substring((file.getName().lastIndexOf(".") + 1)));
+				arq.setNome(arq.getNome().replace("." + arq.getExtensao(), ""));
 				arq.setId(0);
 				listaArquivos.add(arq);
 			} 

@@ -1,4 +1,4 @@
-package br.univel.comum;
+package br.univel.jshare.comum;
 
 import java.io.Serializable;
 import java.util.Date;
