@@ -64,31 +64,32 @@ public class Servidor implements IServer{
 	public Map<Cliente, List<Arquivo>> procurarArquivo(String query, TipoFiltro tipoFiltro, String filtro)
 			throws RemoteException {
 		
-		Map<Cliente, List<Arquivo>> map = new HashMap<>();
-		
+		Map<Cliente, List<Arquivo>> map = new HashMap<>();	
+		query = query.toUpperCase();
+		filtro = filtro.toUpperCase();
 
 		for(Cliente c : listaClientes){
+						
 			List<Arquivo> listaArquivos = new ArrayList<>();
 			
 			for(Arquivo arq : mapArquivos.get(c)){
-				
-				if((query.isEmpty()) || (arq.getNome().contains(query))){
+												
+				if((query.isEmpty()) || (arq.getNome().toUpperCase().contains(query))){
 				
 					switch(tipoFiltro){
 					case EXTENSAO:
-						if(arq.getExtensao().equals(filtro)){
+						if((filtro.isEmpty()) || (arq.getExtensao().toUpperCase().equals(filtro))){
 							listaArquivos.add(arq);
 						}
 						break;
 						
 					case TAMANHO_MAX:
-						if(arq.getTamanho() <= Integer.parseInt(filtro)){
+						if((filtro.isEmpty()) || (arq.getTamanho() <= (Integer.parseInt(filtro) * 1024))){
 							listaArquivos.add(arq);
 						}
 						break;
-						
 					case TAMANHO_MIN:
-						if(arq.getTamanho() >= Integer.parseInt(filtro)){
+						if((filtro.isEmpty()) || (arq.getTamanho() >= (Integer.parseInt(filtro) * 1024))){
 							listaArquivos.add(arq);
 						}
 						break;
@@ -103,8 +104,9 @@ public class Servidor implements IServer{
 			
 			if(listaArquivos.size() > 0){				
 				map.put(c, listaArquivos);
+								
 			}			
-		}					
+		}									
 		
 		return map;
 	}

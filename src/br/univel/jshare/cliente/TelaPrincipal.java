@@ -8,6 +8,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -306,20 +307,20 @@ public class TelaPrincipal extends JFrame{
 		JButton btnPesquisar = new JButton("Pesquisar");
 		btnPesquisar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				Map<Cliente, List<Arquivo>> arquivos;						
-				
+				Map<Cliente, List<Arquivo>> arquivos = new HashMap<>();										
 				
 				TipoFiltro tipo =  (TipoFiltro) cbbFiltro.getSelectedItem();
 				
 				try {
-					System.out.println(tipo.toString());
-					System.out.println("antes procurar");
-					
-					arquivos = remoteServer.procurarArquivo(txtPesquisa.getText(), tipo, txtFilter.getText());
-					System.out.println("pós procurar");
+					if(rbServidor.isSelected()){
+						arquivos = myServer.procurarArquivo(txtPesquisa.getText(), tipo, txtFilter.getText());
+					}else{
+						arquivos = remoteServer.procurarArquivo(txtPesquisa.getText(), tipo, txtFilter.getText());						
+					}
+			
 					montarConsulta(arquivos);
 					
-				} catch (RemoteException e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				} 				
 			}
@@ -405,8 +406,7 @@ public class TelaPrincipal extends JFrame{
 	private void inicializaClientRMI() throws RemoteException{		
 		try {
 			registry = LocateRegistry.getRegistry(txtServidor.getText(), Integer.parseInt(txtPorta.getText()));		
-			remoteServer = (IServer)  registry.lookup(IServer.NOME_SERVICO);
-		
+			remoteServer = (IServer)  registry.lookup(IServer.NOME_SERVICO);		
 		} catch (RemoteException | NotBoundException e) {
 			e.printStackTrace();
 		}		
@@ -417,7 +417,7 @@ public class TelaPrincipal extends JFrame{
 		myClient.setId(1);
 		myClient.setIp(LerIp.RetornarIp());
 		myClient.setNome(txtNome.getText());
-		myClient.setPorta(1819);
+		myClient.setPorta(1818);
 		
 		myServer = new Servidor(getTelaPrincipal(), myClient.getIp(), myClient.getPorta());
 		
@@ -428,6 +428,14 @@ public class TelaPrincipal extends JFrame{
 				
 				List<Arquivo> lista = ListarDiretoriosArquivos.listarArquivos(new File("Share"));								
 				remoteServer.publicarListaArquivos(myClient, lista);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+		}else{
+			try {
+				myServer.registrarCliente(myClient);
+				List<Arquivo> lista = ListarDiretoriosArquivos.listarArquivos(new File("Share"));								
+				myServer.publicarListaArquivos(myClient, lista);
 			} catch (RemoteException e) {
 				e.printStackTrace();
 			}
