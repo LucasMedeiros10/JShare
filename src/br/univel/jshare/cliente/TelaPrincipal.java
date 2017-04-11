@@ -27,6 +27,8 @@ import java.awt.GridBagLayout;
 import javax.swing.JTabbedPane;
 import java.awt.GridBagConstraints;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+
 import java.awt.Insets;
 import java.awt.Font;
 import java.awt.Color;
@@ -301,6 +303,33 @@ public class TelaPrincipal extends JFrame{
 		gbc_txtFilter.gridy = 4;
 		pnlPesquisa.add(txtFilter, gbc_txtFilter);
 		
+		JButton btnPesquisar = new JButton("Pesquisar");
+		btnPesquisar.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				Map<Cliente, List<Arquivo>> arquivos;						
+				
+				
+				TipoFiltro tipo =  (TipoFiltro) cbbFiltro.getSelectedItem();
+				
+				try {
+					System.out.println(tipo.toString());
+					System.out.println("antes procurar");
+					
+					arquivos = remoteServer.procurarArquivo(txtPesquisa.getText(), tipo, txtFilter.getText());
+					System.out.println("pós procurar");
+					montarConsulta(arquivos);
+					
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				} 				
+			}
+		});
+		GridBagConstraints gbc_btnPesquisar = new GridBagConstraints();
+		gbc_btnPesquisar.insets = new Insets(0, 0, 5, 5);
+		gbc_btnPesquisar.gridx = 6;
+		gbc_btnPesquisar.gridy = 4;
+		pnlPesquisa.add(btnPesquisar, gbc_btnPesquisar);
+		
 		JScrollPane scrollPane = new JScrollPane();
 		GridBagConstraints gbc_scrollPane = new GridBagConstraints();
 		gbc_scrollPane.gridwidth = 8;
@@ -316,16 +345,15 @@ public class TelaPrincipal extends JFrame{
 		JButton btnDownload = new JButton("Download");
 		btnDownload.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				byte[] dados = null;
-				try {
-					dados = remoteServer.baixarArquivo(null, null);
-				} catch (RemoteException e) {
-					e.printStackTrace();
+				if(tblResultados.getRowCount() == 0){
+					JOptionPane.showMessageDialog(null, "Nenhum registro a ser alterado.", "Aviso", JOptionPane.WARNING_MESSAGE);									
+				}else{										
+					if(tblResultados.getSelectedRow() == -1){						
+						JOptionPane.showMessageDialog(null, "Selecione um registro para ser alterado.", "Aviso", JOptionPane.WARNING_MESSAGE);					
+					}else{			
+						download();			
+					}
 				}
-				
-				LeituraEscritaDeArquivos io = new LeituraEscritaDeArquivos();
-				//io.escreva(new File("Share\\" + arq.getNome().concat(arq.getExtensao())), dados);				
-				tabsPane.setSelectedIndex(2);
 			}
 		});
 		btnDownload.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -389,9 +417,9 @@ public class TelaPrincipal extends JFrame{
 		myClient.setId(1);
 		myClient.setIp(LerIp.RetornarIp());
 		myClient.setNome(txtNome.getText());
-		myClient.setPorta(Integer.parseInt(txtPorta.getText()));
+		myClient.setPorta(1819);
 		
-		myServer = new Servidor(getTelaPrincipal(), txtServidor.getText(), 1818);
+		myServer = new Servidor(getTelaPrincipal(), myClient.getIp(), myClient.getPorta());
 		
 		if(rbCliente.isSelected()) {
 			try {
@@ -449,6 +477,27 @@ public class TelaPrincipal extends JFrame{
 		tblResultados.setRowSorter(null);		
 		tblResultados.setModel(modelo);		
 	}	
+	
+	private void download(){
+		byte[] dados = null;
+		
+		Cliente cliente = ((ResultadoModel) tblResultados.getModel()).getCliente(tblResultados.getSelectedRow());
+		Arquivo arquivo = ((ResultadoModel) tblResultados.getModel()).getArquivo(tblResultados.getSelectedRow());
+		IServer fileServer = null;
+		
+		try {
+			Registry registry = LocateRegistry.getRegistry(cliente.getIp(), cliente.getPorta());		
+			fileServer = (IServer)  registry.lookup(IServer.NOME_SERVICO);
+			dados = fileServer.baixarArquivo(myClient, arquivo);
+			LeituraEscritaDeArquivos io = new LeituraEscritaDeArquivos();
+			io.escreva(new File("Share\\Copia de " + arquivo.getNome().concat(".").concat(arquivo.getExtensao())), dados);				
+		
+		} catch (RemoteException | NotBoundException e) {
+			e.printStackTrace();
+		}				
+		
+		tabsPane.setSelectedIndex(2);	
+	}
 	
 	public static void main(String[] args) {
 		TelaPrincipal tela = new TelaPrincipal();

@@ -20,7 +20,7 @@ import br.univel.jshare.util.LeituraEscritaDeArquivos;
 public class Servidor implements IServer{
 	
 	private List<Cliente> listaClientes = new ArrayList<>();
-	private Map<Cliente, List<Arquivo>> mapArquivos = new HashMap<>();
+	public Map<Cliente, List<Arquivo>> mapArquivos = new HashMap<>();
 	private String ip;
 	private Integer porta;
 	private TelaPrincipal telaPrincipal;
@@ -112,13 +112,13 @@ public class Servidor implements IServer{
 	@Override
 	public byte[] baixarArquivo(Cliente cli, Arquivo arq) throws RemoteException {
 	
-		telaPrincipal.addLog("Cliente " + cli.getNome() + " baixando o arquivo ".concat(arq.getNome()).concat(arq.getExtensao()));
+		telaPrincipal.addLog("Cliente " + cli.getNome() + " baixando o arquivo ".concat(arq.getNome()).concat(".").concat(arq.getExtensao()));
 		byte[] dados = null;			
 		
 		LeituraEscritaDeArquivos io = new LeituraEscritaDeArquivos();
-		dados = io.leia(new File(arq.getPath()+ arq.getNome() + arq.getExtensao()));
+		dados = io.leia(new File(arq.getPath().concat("\\").concat(arq.getNome()).concat(".").concat(arq.getExtensao()) ) );
 		
-		telaPrincipal.addLog("Cliente " + cli.getNome() + " finalizou o download do arquivo ".concat(arq.getNome()).concat(arq.getExtensao()));
+		telaPrincipal.addLog("Cliente " + cli.getNome() + " finalizou o download do arquivo ".concat(arq.getNome()).concat(".").concat(arq.getExtensao()));
 		return dados;
 	}
 
