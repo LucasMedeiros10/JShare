@@ -7,7 +7,6 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +22,7 @@ import br.univel.jshare.servidor.Servidor;
 import br.univel.jshare.util.LeituraEscritaDeArquivos;
 import br.univel.jshare.util.LerIp;
 import br.univel.jshare.util.ListarDiretoriosArquivos;
+import br.univel.jshare.util.Md5Util;
 
 import java.awt.GridBagLayout;
 import javax.swing.JTabbedPane;
@@ -60,7 +60,6 @@ public class TelaPrincipal extends JFrame{
 	private JTextField txtNome;
 	private JRadioButton rbCliente;
 	private JRadioButton rbServidor;
-	private JTextArea txtLog;
 	private JButton btnConectar;
 	private JButton btnDesconectar;
 	private Servidor myServer;
@@ -68,9 +67,10 @@ public class TelaPrincipal extends JFrame{
 	private Cliente myClient;
 	private JTabbedPane tabsPane;
 	private Registry registry;
+	private JTextArea txtLog;
 	
 	
-	public TelaPrincipal(){		
+	public TelaPrincipal() {		
 		this.setTitle("JShare - Compartilhador de Arquivos");
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 		this.setSize(719, 476);
@@ -370,23 +370,27 @@ public class TelaPrincipal extends JFrame{
 		tabsPane.setEnabledAt(2, true);
 		GridBagLayout gbl_pnlTransferencias = new GridBagLayout();
 		gbl_pnlTransferencias.columnWidths = new int[]{0, 0};
-		gbl_pnlTransferencias.rowHeights = new int[]{0, 0};
+		gbl_pnlTransferencias.rowHeights = new int[]{0, 0, 0};
 		gbl_pnlTransferencias.columnWeights = new double[]{1.0, Double.MIN_VALUE};
-		gbl_pnlTransferencias.rowWeights = new double[]{1.0, Double.MIN_VALUE};
+		gbl_pnlTransferencias.rowWeights = new double[]{1.0, 1.0, Double.MIN_VALUE};
 		pnlTransferencias.setLayout(gbl_pnlTransferencias);
 		
+		JScrollPane scrollPane_1 = new JScrollPane();
+		GridBagConstraints gbc_scrollPane_1 = new GridBagConstraints();
+		gbc_scrollPane_1.gridheight = 2;
+		gbc_scrollPane_1.fill = GridBagConstraints.BOTH;
+		gbc_scrollPane_1.gridx = 0;
+		gbc_scrollPane_1.gridy = 0;
+		pnlTransferencias.add(scrollPane_1, gbc_scrollPane_1);
+		
 		txtLog = new JTextArea();
-		txtLog.setFont(new Font("Courier New", Font.BOLD, 12));
-		txtLog.setForeground(new Color(0, 204, 0));
 		txtLog.setSelectionColor(new Color(0, 102, 0));
 		txtLog.setSelectedTextColor(new Color(0, 204, 51));
+		txtLog.setForeground(new Color(0, 204, 0));
+		txtLog.setFont(new Font("Courier New", Font.BOLD, 12));
 		txtLog.setEditable(false);
-		txtLog.setBackground(new Color(0, 0, 0));
-		GridBagConstraints gbc_txtLog = new GridBagConstraints();
-		gbc_txtLog.fill = GridBagConstraints.BOTH;
-		gbc_txtLog.gridx = 0;
-		gbc_txtLog.gridy = 0;
-		pnlTransferencias.add(txtLog, gbc_txtLog);
+		txtLog.setBackground(Color.BLACK);
+		scrollPane_1.setViewportView(txtLog);
 		
 
 		this.setVisible(true);
@@ -396,7 +400,6 @@ public class TelaPrincipal extends JFrame{
 	public void addLog(String log){
 		txtLog.append(log);
 		txtLog.append("\n");
-		tabsPane.setSelectedIndex(2);
 	}
 	
 	private TelaPrincipal getTelaPrincipal(){
@@ -424,25 +427,51 @@ public class TelaPrincipal extends JFrame{
 		if(rbCliente.isSelected()) {
 			try {
 				inicializaClientRMI();
-				remoteServer.registrarCliente(myClient);
-				
-				List<Arquivo> lista = ListarDiretoriosArquivos.listarArquivos(new File("Share"));								
-				remoteServer.publicarListaArquivos(myClient, lista);
+				remoteServer.registrarCliente(myClient);				
 			} catch (RemoteException e) {
 				e.printStackTrace();
 			}
 		}else{
 			try {
 				myServer.registrarCliente(myClient);
-				List<Arquivo> lista = ListarDiretoriosArquivos.listarArquivos(new File("Share"));								
-				myServer.publicarListaArquivos(myClient, lista);
 			} catch (RemoteException e) {
 				e.printStackTrace();
 			}
 		}
+		
 
 		btnConectar.setEnabled(false);
 		btnDesconectar.setEnabled(true);		
+		
+		Thread threadArquivos = new Thread() {
+			
+			@Override
+			public void run() {
+				try {
+					while(!btnConectar.isEnabled()){
+						List<Arquivo> lista = ListarDiretoriosArquivos.listarArquivos(new File("Share"));								
+						if(rbServidor.isSelected()){
+							myServer.publicarListaArquivos(myClient, lista);
+						}else{
+							remoteServer.publicarListaArquivos(myClient, lista);						
+						}  
+						
+						try {
+							currentThread().sleep(10000);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+				
+			}
+		};
+
+		threadArquivos.start();
+		tabsPane.setSelectedIndex(2);		
+		
 	}
 	
 	private void desconectar(){
@@ -491,21 +520,38 @@ public class TelaPrincipal extends JFrame{
 		
 		Cliente cliente = ((ResultadoModel) tblResultados.getModel()).getCliente(tblResultados.getSelectedRow());
 		Arquivo arquivo = ((ResultadoModel) tblResultados.getModel()).getArquivo(tblResultados.getSelectedRow());
+		File arquivoBaixado = new File("Share\\Copia de " + arquivo.getNome().concat(".").concat(arquivo.getExtensao())); 
 		IServer fileServer = null;
-		
+		String md5Servidor = arquivo.getMd5();
+		String md5local = "";
+
 		try {
 			Registry registry = LocateRegistry.getRegistry(cliente.getIp(), cliente.getPorta());		
 			fileServer = (IServer)  registry.lookup(IServer.NOME_SERVICO);
 			dados = fileServer.baixarArquivo(myClient, arquivo);
 			LeituraEscritaDeArquivos io = new LeituraEscritaDeArquivos();
-			io.escreva(new File("Share\\Copia de " + arquivo.getNome().concat(".").concat(arquivo.getExtensao())), dados);				
-		
+			
+			io.escreva(arquivoBaixado, dados);
+			
+			
+			tabsPane.setSelectedIndex(2);			
 		} catch (RemoteException | NotBoundException e) {
 			e.printStackTrace();
 		}				
 		
-		tabsPane.setSelectedIndex(2);	
+		md5local = Md5Util.getMD5Checksum(arquivoBaixado.getPath());
+		
+		if(md5local.equals(md5Servidor)){
+			addLog("Arquivo com integridade OK");
+		}else{
+			addLog("Arquivo corrompido.");
+			addLog("MD5 local = ".concat(md5local));
+			addLog("MD5 servidor = ".concat(md5Servidor));
+		}
+		
 	}
+	
+	
 	
 	public static void main(String[] args) {
 		TelaPrincipal tela = new TelaPrincipal();

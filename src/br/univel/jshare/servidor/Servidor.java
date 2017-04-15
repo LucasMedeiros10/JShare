@@ -57,7 +57,6 @@ public class Servidor implements IServer{
 			telaPrincipal.addLog("\t" + arq.getNome().concat(".").concat(arq.getExtensao()));
 		}		
 		
-		telaPrincipal.montarConsulta(mapArquivos);
 	}
 
 	@Override
@@ -78,7 +77,7 @@ public class Servidor implements IServer{
 				
 					switch(tipoFiltro){
 					case EXTENSAO:
-						if((filtro.isEmpty()) || (arq.getExtensao().toUpperCase().equals(filtro))){
+						if((filtro.isEmpty()) || (arq.getExtensao().toUpperCase().contains(filtro))){
 							listaArquivos.add(arq);
 						}
 						break;
