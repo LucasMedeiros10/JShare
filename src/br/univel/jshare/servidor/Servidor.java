@@ -71,40 +71,42 @@ public class Servidor implements IServer{
 						
 			List<Arquivo> listaArquivos = new ArrayList<>();
 			
-			for(Arquivo arq : mapArquivos.get(c)){
-												
-				if((query.isEmpty()) || (arq.getNome().toUpperCase().contains(query))){
-				
-					switch(tipoFiltro){
-					case EXTENSAO:
-						if((filtro.isEmpty()) || (arq.getExtensao().toUpperCase().contains(filtro))){
-							listaArquivos.add(arq);
-						}
-						break;
-						
-					case TAMANHO_MAX:
-						if((filtro.isEmpty()) || (arq.getTamanho() <= (Integer.parseInt(filtro) * 1024))){
-							listaArquivos.add(arq);
-						}
-						break;
-					case TAMANHO_MIN:
-						if((filtro.isEmpty()) || (arq.getTamanho() >= (Integer.parseInt(filtro) * 1024))){
-							listaArquivos.add(arq);
-						}
-						break;
-						
-					default:
-						listaArquivos.add(arq);				
-						break;
-					}							
+			if(mapArquivos.get(c) != null){
+				for(Arquivo arq : mapArquivos.get(c)){
+													
+					if((query.isEmpty()) || (arq.getNome().toUpperCase().contains(query))){
+					
+						switch(tipoFiltro){
+						case EXTENSAO:
+							if((filtro.isEmpty()) || (arq.getExtensao().toUpperCase().contains(filtro))){
+								listaArquivos.add(arq);
+							}
+							break;
+							
+						case TAMANHO_MAX:
+							if((filtro.isEmpty()) || (arq.getTamanho() <= (Integer.parseInt(filtro) * 1024))){
+								listaArquivos.add(arq);
+							}
+							break;
+						case TAMANHO_MIN:
+							if((filtro.isEmpty()) || (arq.getTamanho() >= (Integer.parseInt(filtro) * 1024))){
+								listaArquivos.add(arq);
+							}
+							break;
+							
+						default:
+							listaArquivos.add(arq);				
+							break;
+						}							
+					}
+					
 				}
 				
+				if(listaArquivos.size() > 0){				
+					map.put(c, listaArquivos);
+									
+				}
 			}
-			
-			if(listaArquivos.size() > 0){				
-				map.put(c, listaArquivos);
-								
-			}			
 		}									
 		
 		return map;

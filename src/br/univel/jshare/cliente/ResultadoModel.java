@@ -23,7 +23,7 @@ public class ResultadoModel extends AbstractTableModel {
 			}
 		}
 
-		matrix = new Object[tempCli][6];
+		matrix = new Object[tempCli][4];
 		
 		List<Cliente> list = new ArrayList<>(dados.keySet());
 		

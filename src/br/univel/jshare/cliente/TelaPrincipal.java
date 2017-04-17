@@ -112,6 +112,7 @@ public class TelaPrincipal extends JFrame{
 		rbServidor = new JRadioButton("Servidor e Cliente");
 		rbCliente = new JRadioButton("Cliente");
 		txtServidor = new JTextField();
+		txtPorta = new JTextField();
 		txtServidor.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyTyped(KeyEvent e) {
@@ -128,6 +129,9 @@ public class TelaPrincipal extends JFrame{
 				if(rbServidor.isSelected()){
 					rbCliente.setSelected(false);
 					txtServidor.setText(LerIp.RetornarIp());
+					txtServidor.setEnabled(false);
+					txtPorta.setText("1818");
+					txtPorta.setEnabled(false);
 				}				
 			}
 		});
@@ -143,6 +147,8 @@ public class TelaPrincipal extends JFrame{
 			public void itemStateChanged(ItemEvent arg0) {
 				if(rbCliente.isSelected()){
 					rbServidor.setSelected(false);
+					txtServidor.setEnabled(true);
+					txtPorta.setEnabled(true);
 				}
 			}
 		});
@@ -187,8 +193,7 @@ public class TelaPrincipal extends JFrame{
 		gbc_lblNewLabel_2.gridx = 2;
 		gbc_lblNewLabel_2.gridy = 4;
 		pnlConfig.add(lblNewLabel_2, gbc_lblNewLabel_2);
-		
-		txtPorta = new JTextField();
+				
 		txtPorta.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyTyped(KeyEvent e) {
@@ -441,7 +446,9 @@ public class TelaPrincipal extends JFrame{
 		
 
 		btnConectar.setEnabled(false);
-		btnDesconectar.setEnabled(true);		
+		btnDesconectar.setEnabled(true);	
+		rbServidor.setEnabled(false);
+		rbCliente.setEnabled(false);
 		
 		Thread threadArquivos = new Thread() {
 			
@@ -457,7 +464,7 @@ public class TelaPrincipal extends JFrame{
 						}  
 						
 						try {
-							currentThread().sleep(10000);
+							currentThread().sleep(30000);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
@@ -504,6 +511,8 @@ public class TelaPrincipal extends JFrame{
 		
 		btnConectar.setEnabled(true);
 		btnDesconectar.setEnabled(false);			
+		rbServidor.setEnabled(true);
+		rbCliente.setEnabled(true);
 		
 		addLog("Servidor desconectado.");
 	}
@@ -525,14 +534,15 @@ public class TelaPrincipal extends JFrame{
 		String md5Servidor = arquivo.getMd5();
 		String md5local = "";
 
+		addLog("Iniciando o download do arquivo " + arquivo.getNome() + " do cliente " + cliente.getNome());
 		try {
 			Registry registry = LocateRegistry.getRegistry(cliente.getIp(), cliente.getPorta());		
+			
 			fileServer = (IServer)  registry.lookup(IServer.NOME_SERVICO);
 			dados = fileServer.baixarArquivo(myClient, arquivo);
-			LeituraEscritaDeArquivos io = new LeituraEscritaDeArquivos();
 			
-			io.escreva(arquivoBaixado, dados);
-			
+			LeituraEscritaDeArquivos io = new LeituraEscritaDeArquivos();			
+			io.escreva(arquivoBaixado, dados);			
 			
 			tabsPane.setSelectedIndex(2);			
 		} catch (RemoteException | NotBoundException e) {
@@ -541,12 +551,17 @@ public class TelaPrincipal extends JFrame{
 		
 		md5local = Md5Util.getMD5Checksum(arquivoBaixado.getPath());
 		
-		if(md5local.equals(md5Servidor)){
-			addLog("Arquivo com integridade OK");
+		if(arquivoBaixado.exists()){
+			if(md5local.equals(md5Servidor)){
+				addLog("Arquivo com integridade OK");
+				addLog("Download realizado com sucesso.");
+			}else{
+				addLog("Arquivo corrompido.");
+				addLog("MD5 local = ".concat(md5local));
+				addLog("MD5 servidor = ".concat(md5Servidor));
+			}
 		}else{
-			addLog("Arquivo corrompido.");
-			addLog("MD5 local = ".concat(md5local));
-			addLog("MD5 servidor = ".concat(md5Servidor));
+			addLog("Não foi possível baixar o arquivo");
 		}
 		
 	}
